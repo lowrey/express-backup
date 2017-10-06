@@ -1,0 +1,26 @@
+{
+  "name": "express-backup",
+  "version": "1.0.0",
+  "description": "Create and transfer backups for MySQL/other dbs backed websites",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": "git+https://github.com/lowrey/express-backup.git",
+  "author": "Hrothgar <you@example.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/lowrey/express-backup/issues"
+  },
+  "homepage": "https://github.com/lowrey/express-backup#readme",
+  "dependencies": {
+    "basic-auth": "^2.0.0",
+    "cors": "^2.8.4",
+    "eslint": "^4.8.0",
+    "express": "^4.16.1"
+  },
+  "devDependencies": {
+    "eslint": "^4.8.0",
+    "eslint-config-google": "^0.9.1"
+  }
+}
