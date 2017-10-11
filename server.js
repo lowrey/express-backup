@@ -2,8 +2,11 @@ const express = require('express');
 const cors = require('cors');
 const basicAuth = require('basic-auth');
 const path = require('path');
-const exec = require('child_process').exec;
-const config = require('config.json');
+const fs = require('fs');
+// const exec = require('child_process').exec;
+const config = require('./config.json');
+const mysqldump = require('mysqldump');
+const tar = require('tar');
 
 let app = express();
 app.use(cors());
@@ -24,18 +27,68 @@ const auth = (req, res, next) => {
   };
 };
 
+/*
 const sendFile = (req, res, filename) => {
-    res.set('Content-Type', 'application/octet-stream');
-    res.set('Content-Disposition', `attachment; filename= "${filename}"`);
-    res.send('TEST');
+  res.set('Content-Type', 'application/octet-stream');
+  res.set('Content-Disposition', `attachment; filename= "${filename}"`);
+  res.send('TEST');
+};
+*/
+
+function mkdir(dir, mode) {
+  try{
+    fs.mkdirSync(dir, mode);
+  } catch(e) {
+    if(e.errno === 34) {
+      mkdir(path.dirname(dir), mode);
+      mkdir(dir, mode);
+    }
+  }
+}
+
+const compress = (sitename, sql, dest) => {
+  const siteDir = config.defaults.path.sites + sitename + '/';
+  const pubDir = siteDir + config.defaults.path.public + '/';
+    // const logDir = siteDir + config.defaults.path.logs + '/';
+  return tar.c({
+    gzip: true,
+  }, [pubDir, sql]);
 };
 
+const cleanup = (sitename) => {
+  console.log('cleanup:', sitename);
+  const destDir = config.defaults.path.backup + sitename + '/';
+  const sqlFile = destDir + sitename + '.sql';
+  return fs.unlinkSync(sqlFile);
+};
+
+// TODO error handling
 app.get('/backup/:site', auth, (req, res) => {
-    const site = req.params.site;
-    const command = `date`;
-    console.log('Executing', command);
-    console.log('Config', config.user);
-    exec(command, (...args) => res.json(args));
+  const sitename = req.params.site;
+  const site = config.sites[sitename];
+  const destDir = config.defaults.path.backup + sitename + '/';
+  // const timestamp = Date.now();
+  const sqlFile = destDir + sitename + '.sql';
+  mkdir(destDir);
+  // res.json(args))
+  console.log('sql:', sqlFile);
+  mysqldump({
+    host: config.host,
+    user: config.user,
+    password: config.password,
+    database: site.db,
+    dest: sqlFile,
+  }, (err) => {
+    console.log('mysql done:', sqlFile);
+    if (err !== null) {
+      res.json(err);
+    } else {
+      const tarfile = destDir + sitename + '.tar.gz';
+      console.log('tar:', tarfile);
+      const task = compress(sitename, sqlFile, tarfile).pipe(res);
+      task.on('finish', () => cleanup(sitename));
+    }
+  });
 });
 
 app.get('/*', (req, res) => {
@@ -43,5 +96,5 @@ app.get('/*', (req, res) => {
 });
 
 module.exports = {
-    app: app,
+  app: app,
 };
