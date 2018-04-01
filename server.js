@@ -20,7 +20,7 @@ const auth = (req, res, next) => {
   if (!user || !user.name || !user.pass) {
     return unauthorized(res);
   }
-  if (user.name === 'samhyde' && user.pass === 'Kratom77') {
+  if (user.name === '' && user.pass === '') {
     return next();
   }
   return unauthorized(res);
